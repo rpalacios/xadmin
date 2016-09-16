@@ -284,9 +284,6 @@ class AdminSite(object):
         from django.conf.urls import url, include
         from xadmin.views.base import BaseAdminView
 
-        if settings.DEBUG:
-            self.check_dependencies()
-
         def wrap(view, cacheable=False):
             def wrapper(*args, **kwargs):
                 return self.admin_view(view, cacheable)(*args, **kwargs)
