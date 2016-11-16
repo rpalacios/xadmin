@@ -69,8 +69,8 @@ class ResultItem(object):
         if force_unicode(text) == '':
             text = mark_safe('&nbsp;')
         for wrap in self.wraps:
-            text = text.replace('%', '%%')
-            text = mark_safe(wrap % text)
+            wrap = wrap.replace('%s', '{}')
+            text = mark_safe(wrap.format(text))
         return text
 
     @property
