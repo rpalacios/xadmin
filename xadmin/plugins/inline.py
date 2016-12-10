@@ -432,7 +432,11 @@ class InlineFormsetPlugin(BaseAdminPlugin):
     def get_form_layout(self, layout):
         allow_blank = isinstance(self.admin_view, DetailAdminView)
         # fixed #176 bug, change dict to list
-        fs = [(f.model, InlineFormset(f, allow_blank)) for f in self.formsets]
+        # -----
+        # This was changed from list to dict again because replace_inline_objects does not .pop
+        # founded Inlines, so they are added at final of layout no matter if it is putted at beginning
+        # of layout
+        fs = dict([(f.model, InlineFormset(f, allow_blank)) for f in self.formsets])
         replace_inline_objects(layout, fs)
 
         if fs:
