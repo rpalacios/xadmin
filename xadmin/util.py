@@ -329,9 +329,11 @@ def display_for_field(value, field):
     elif value is None:
         return EMPTY_CHANGELIST_VALUE
     elif isinstance(field, models.DateTimeField):
-        return formats.localize(tz_localtime(value))
+        #return formats.localize(tz_localtime(value))
+        return formats.date_format(value, settings.DATETIME_FORMAT)
     elif isinstance(field, (models.DateField, models.TimeField)):
-        return formats.localize(value)
+        #return formats.localize(value)
+        return formats.date_format(value, settings.DATE_FORMAT)
     elif isinstance(field, models.DecimalField):
         return formats.number_format(value, field.decimal_places)
     elif isinstance(field, models.FloatField):
