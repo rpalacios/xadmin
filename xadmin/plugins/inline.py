@@ -161,7 +161,7 @@ class InlineModelAdmin(ModelFormAdminView):
             "form": self.form,
             "formset": self.formset,
             "fk_name": self.fk_name,
-            'fields': forms.ALL_FIELDS,
+            'fields': self.fields,
             "exclude": exclude,
             "formfield_callback": self.formfield_for_dbfield,
             "extra": self.extra,
@@ -312,7 +312,7 @@ class GenericInlineModelAdmin(InlineModelAdmin):
             "can_order": False,
             "max_num": self.max_num,
             "exclude": exclude,
-            'fields': forms.ALL_FIELDS
+            'fields': self.fields
         }
         defaults.update(kwargs)
 
