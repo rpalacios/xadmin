@@ -1,5 +1,6 @@
 import copy
 
+from crispy_forms.utils import render_field, TEMPLATE_PACK
 from django import forms
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
@@ -10,6 +11,7 @@ from django.template.response import TemplateResponse
 from django.utils.encoding import force_unicode
 from django.utils.html import escape
 from django.template import loader
+from django.utils.safestring import mark_safe
 from django.utils.translation import ugettext as _
 from xadmin import widgets
 from xadmin.layout import FormHelper, Layout, Fieldset, TabHolder, Container, Column, Col, Field
@@ -173,3 +175,40 @@ class FormAdminView(CommAdminView):
     @filter_hook
     def get_redirect_url(self):
         return self.get_admin_url('index')
+
+
+class FormsetFormHelper(FormHelper):
+    def render_layout(self, form, context, template_pack=TEMPLATE_PACK):
+        """
+        Returns safe html of the rendering of the layout
+        """
+        form.rendered_fields = set()
+        form.crispy_field_template = self.field_template
+
+        # This renders the specifed Layout strictly
+        html = self.layout.render(
+            form,
+            self.form_style,
+            context,
+            template_pack=template_pack
+        )
+
+        # Rendering some extra fields if specified
+        if self.render_unmentioned_fields or self.render_hidden_fields or self.render_required_fields:
+            fields = set(form.fields.keys())
+            left_fields_to_render = fields - form.rendered_fields
+            for field in left_fields_to_render:
+                if (
+                    self.render_unmentioned_fields or
+                    self.render_hidden_fields and form.fields[field].widget.is_hidden or
+                    self.render_required_fields and form.fields[field].widget.is_required
+                ):
+                    html += render_field(
+                        field,
+                        form,
+                        self.form_style,
+                        context,
+                        template_pack=template_pack
+                    )
+
+        return mark_safe(html)
