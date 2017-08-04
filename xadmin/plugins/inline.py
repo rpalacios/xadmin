@@ -7,13 +7,14 @@ from django.contrib.contenttypes.forms import BaseGenericInlineFormSet, generic_
 from django.template import loader
 from django.template.loader import render_to_string
 from django.contrib.auth import get_permission_codename
+from django.utils import six
+from django.utils.encoding import smart_text
 from crispy_forms.utils import TEMPLATE_PACK
 
 from xadmin.layout import FormHelper, Layout, flatatt, Container, Column, Field, Fieldset
 from xadmin.plugins.utils import get_context_dict
 from xadmin.sites import site
 from xadmin.views import BaseAdminPlugin, ModelFormAdminView, DetailAdminView, filter_hook
-from xadmin.views.form import FormsetFormHelper
 
 
 class ShowField(Field):
@@ -114,10 +115,11 @@ style_manager.register_style("table", TableInlineStyle)
 
 def replace_field_to_value(layout, av):
     if layout:
+        cls_str = str if six.PY3 else basestring
         for i, lo in enumerate(layout.fields):
             if isinstance(lo, Field) or issubclass(lo.__class__, Field):
                 layout.fields[i] = ShowField(av, *lo.fields, **lo.attrs)
-            elif isinstance(lo, basestring):
+            elif isinstance(lo, cls_str):
                 layout.fields[i] = ShowField(av, lo)
             elif hasattr(lo, 'get_field_names'):
                 replace_field_to_value(lo, av)
@@ -188,7 +190,8 @@ class InlineModelAdmin(ModelFormAdminView):
         instance = formset(**attrs)
         instance.view = self
 
-        helper = FormsetFormHelper()
+        helper = FormHelper()
+        helper.form_tag = False
         helper.include_media = False
         # override form method to prevent render csrf_token in inline forms, see template 'bootstrap/whole_uni_form.html'
         helper.form_method = 'get'
@@ -222,25 +225,22 @@ class InlineModelAdmin(ModelFormAdminView):
         if readonly_fields:
             for form in instance:
                 form.readonly_fields = []
-                try:
-                    inst = form.save(commit=False)
-                    if inst:
-                        for readonly_field in readonly_fields:
-                            value = None
-                            label = None
-                            if readonly_field in inst._meta.get_all_field_names():
-                                label = inst._meta.get_field(readonly_field).verbose_name
-                                value = unicode(getattr(inst, readonly_field))
-                            elif inspect.ismethod(getattr(inst, readonly_field, None)):
-                                value = getattr(inst, readonly_field)()
-                                label = getattr(getattr(inst, readonly_field), 'short_description', readonly_field)
-                            elif inspect.ismethod(getattr(self, readonly_field, None)):
-                                value = getattr(self, readonly_field)(inst)
-                                label = getattr(getattr(self, readonly_field), 'short_description', readonly_field)
-                            if value:
-                                form.readonly_fields.append({'label': label, 'contents': value})
-                except:
-                    pass
+                inst = form.save(commit=False)
+                if inst:
+                    for readonly_field in readonly_fields:
+                        value = None
+                        label = None
+                        if readonly_field in inst._meta.get_all_field_names():
+                            label = inst._meta.get_field(readonly_field).verbose_name
+                            value = smart_text(getattr(inst, readonly_field))
+                        elif inspect.ismethod(getattr(inst, readonly_field, None)):
+                            value = getattr(inst, readonly_field)()
+                            label = getattr(getattr(inst, readonly_field), 'short_description', readonly_field)
+                        elif inspect.ismethod(getattr(self, readonly_field, None)):
+                            value = getattr(self, readonly_field)(inst)
+                            label = getattr(getattr(self, readonly_field), 'short_description', readonly_field)
+                        if value:
+                            form.readonly_fields.append({'label': label, 'contents': value})
         return instance
 
     def has_auto_field(self, form):
@@ -432,11 +432,7 @@ class InlineFormsetPlugin(BaseAdminPlugin):
     def get_form_layout(self, layout):
         allow_blank = isinstance(self.admin_view, DetailAdminView)
         # fixed #176 bug, change dict to list
-        # -----
-        # This was changed from list to dict again because replace_inline_objects does not .pop
-        # founded Inlines, so they are added at final of layout no matter if it is putted at beginning
-        # of layout
-        fs = dict([(f.model, InlineFormset(f, allow_blank)) for f in self.formsets])
+        fs = [(f.model, InlineFormset(f, allow_blank)) for f in self.formsets]
         replace_inline_objects(layout, fs)
 
         if fs:
@@ -447,7 +443,7 @@ class InlineFormsetPlugin(BaseAdminPlugin):
                 container = layout
 
             # fixed #176 bug, change dict to list
-            for key, value in fs.items():
+            for key, value in fs:
                 container.append(value)
 
         return layout
