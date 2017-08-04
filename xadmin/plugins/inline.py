@@ -15,6 +15,7 @@ from xadmin.layout import FormHelper, Layout, flatatt, Container, Column, Field,
 from xadmin.plugins.utils import get_context_dict
 from xadmin.sites import site
 from xadmin.views import BaseAdminPlugin, ModelFormAdminView, DetailAdminView, filter_hook
+from xadmin.views.form import FormsetFormHelper
 
 
 class ShowField(Field):
@@ -190,7 +191,7 @@ class InlineModelAdmin(ModelFormAdminView):
         instance = formset(**attrs)
         instance.view = self
 
-        helper = FormHelper()
+        helper = FormsetFormHelper()
         helper.form_tag = False
         helper.include_media = False
         # override form method to prevent render csrf_token in inline forms, see template 'bootstrap/whole_uni_form.html'

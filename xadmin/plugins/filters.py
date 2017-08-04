@@ -161,7 +161,7 @@ class FilterPlugin(BaseAdminPlugin):
             if isinstance(queryset, models.query.QuerySet) and lookup_params:
                 new_lookup_parames = dict()
                 for k, v in lookup_params.iteritems():
-                    list_v = v.split(',')
+                    list_v = v.split(',') if isinstance(v, basestring) else [v]
                     if len(list_v) > 0:
                         new_lookup_parames.update({k: list_v})
                     else:
