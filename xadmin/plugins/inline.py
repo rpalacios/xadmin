@@ -226,7 +226,12 @@ class InlineModelAdmin(ModelFormAdminView):
         if readonly_fields:
             for form in instance:
                 form.readonly_fields = []
-                inst = form.save(commit=False)
+
+                try:
+                    inst = form.save(commit=False)
+                except ValueError:
+                    inst = form.instance
+
                 if inst:
                     for readonly_field in readonly_fields:
                         value = None
