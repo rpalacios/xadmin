@@ -350,6 +350,12 @@ class InlineFormset(Fieldset):
             formset=self,
             prefix=self.formset.prefix,
             inline_style=self.inline_style,
+            has_add_permission=context.get('user').has_perm(
+                '{app_label}.add_{model}'.format(app_label=self.model._meta.app_label,
+                                                 model=self.model._meta.model_name)),
+            has_change_permission=context.get('user').has_perm(
+                '{app_label}.change_{model}'.format(app_label=self.model._meta.app_label,
+                                                    model=self.model._meta.model_name)),
             **self.extra_attrs
         ))
         return render_to_string(self.template, context)
